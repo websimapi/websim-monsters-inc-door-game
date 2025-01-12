@@ -1,0 +1,232 @@
+<html><head><base href="." /><title>Monsters Inc. Door Game</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #2c3e50;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  .game-container {
+    flex: 1;
+    position: relative;
+  }
+
+  .door {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 300px;
+    background: #e74c3c;
+    border-radius: 10px;
+    transition: all 0.3s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+  }
+
+  .door.locked {
+    background: #c0392b;
+  }
+
+  .knob {
+    width: 30px;
+    height: 30px;
+    background: #f1c40f;
+    border-radius: 50%;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+  }
+
+  .monster {
+    width: 100px;
+    height: 100px;
+    position: absolute;
+    transition: all 0.5s;
+    opacity: 0;
+  }
+
+  .controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.9);
+    padding: 15px;
+    border-radius: 10px;
+    display: none;
+  }
+
+  .lock-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 30px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+  }
+
+  .monster-counter {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(255,255,255,0.9);
+    padding: 15px;
+    border-radius: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="door locked">
+      <div class="knob"></div>
+    </div>
+  </div>
+  <div class="monster-counter">Monsters Found: <span id="count">0</span></div>
+  <div class="controls">
+    <h3>Parental Controls</h3>
+    <label>
+      Monster Speed:
+      <input type="range" id="speed" min="1" max="5" value="3">
+    </label>
+    <br>
+    <label>
+      Difficulty:
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </label>
+  </div>
+  <button class="lock-button">Hold to Access Controls</button>
+
+<script>
+const door = document.querySelector('.door');
+const controls = document.querySelector('.controls');
+const lockButton = document.querySelector('.lock-button');
+const counter = document.querySelector('#count');
+let monsterCount = 0;
+let isLocked = true;
+let controlsLocked = true;
+
+// Monster colors and shapes
+const monsterTypes = [
+  { color: '#2ecc71', eyes: 2 },
+  { color: '#9b59b6', eyes: 1 },
+  { color: '#f1c40f', eyes: 3 },
+  { color: '#1abc9c', eyes: 2 }
+];
+
+function createMonster() {
+  const monster = document.createElement('div');
+  monster.className = 'monster';
+  const type = monsterTypes[Math.floor(Math.random() * monsterTypes.length)];
+  
+  // Create SVG monster
+  const svg = `
+    <svg viewBox="0 0 100 100">
+      <path d="M10,50 Q50,${Math.random() * 30 + 20} 90,50 Q50,${Math.random() * 30 + 60} 10,50" 
+            fill="${type.color}"/>
+      ${Array(type.eyes).fill().map((_, i) => `
+        <circle cx="${25 + (i * 25)}" cy="45" r="5" fill="white"/>
+        <circle cx="${25 + (i * 25)}" cy="45" r="2" fill="black"/>
+      `).join('')}
+    </svg>
+  `;
+  
+  monster.innerHTML = svg;
+  document.querySelector('.game-container').appendChild(monster);
+  
+  // Random position and movement
+  const moveMonster = () => {
+    const speed = document.querySelector('#speed').value;
+    monster.style.left = Math.random() * (window.innerWidth - 100) + 'px';
+    monster.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+    monster.style.opacity = '1';
+    
+    setTimeout(() => {
+      monster.style.opacity = '0';
+      setTimeout(() => monster.remove(), 500);
+    }, 2000 / speed);
+  };
+  
+  moveMonster();
+}
+
+door.addEventListener('click', () => {
+  if (!isLocked) {
+    createMonster();
+    monsterCount++;
+    counter.textContent = monsterCount;
+  }
+});
+
+// Hold to unlock controls
+let holdTimer;
+lockButton.addEventListener('mousedown', () => {
+  holdTimer = setTimeout(() => {
+    controlsLocked = !controlsLocked;
+    controls.style.display = controlsLocked ? 'none' : 'block';
+    lockButton.textContent = controlsLocked ? 'Hold to Access Controls' : 'Hold to Lock Controls';
+  }, 2000);
+});
+
+lockButton.addEventListener('mouseup', () => {
+  clearTimeout(holdTimer);
+});
+
+lockButton.addEventListener('mouseleave', () => {
+  clearTimeout(holdTimer);
+});
+
+// Toggle door lock
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'l' && !controlsLocked) {
+    isLocked = !isLocked;
+    door.classList.toggle('locked');
+  }
+});
+
+// Make door wiggle when clicked while locked
+door.addEventListener('click', () => {
+  if (isLocked) {
+    door.style.transform = 'translate(-50%, -50%) rotate(5deg)';
+    setTimeout(() => {
+      door.style.transform = 'translate(-50%, -50%) rotate(-5deg)';
+      setTimeout(() => {
+        door.style.transform = 'translate(-50%, -50%) rotate(0)';
+      }, 100);
+    }, 100);
+  }
+});
+
+// Difficulty settings
+document.querySelector('#difficulty').addEventListener('change', (e) => {
+  const speed = document.querySelector('#speed');
+  switch(e.target.value) {
+    case 'easy':
+      speed.value = 2;
+      break;
+    case 'medium':
+      speed.value = 3;
+      break;
+    case 'hard':
+      speed.value = 5;
+      break;
+  }
+});
+</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body></html>
