@@ -39,6 +39,11 @@
     background: #c0392b;
   }
 
+  .door.closed {
+    transform: translate(-50%, -50%) scaleX(0.1);
+    opacity: 0.8;
+  }
+
   .knob {
     width: min(30px, 10vw);
     height: min(30px, 10vw);
@@ -208,6 +213,11 @@ function createMonster() {
     if (distance < 200) {
       monster.classList.add('close');
       monster.style.animation = 'bounce 0.5s infinite';
+      // Auto-close door when monster is close
+      door.classList.add('closed');
+      setTimeout(() => {
+        door.classList.remove('closed');
+      }, 1000);
     } else {
       monster.classList.remove('close');
       monster.style.animation = 'wobble 2s infinite';
